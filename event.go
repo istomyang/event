@@ -77,6 +77,7 @@ type Message struct {
 	Extra    string          `json:"extra,omitempty" yaml:"extra,omitempty" bson:"extra,omitempty"`
 }
 
+// LifeCycle helps you bind your component to App's lifecycle.
 type LifeCycle interface {
 	Run() error
 	MustRun()
