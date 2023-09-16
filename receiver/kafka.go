@@ -24,7 +24,8 @@ type KafkaConfig struct {
 
 func NewKafkaReceiver(config KafkaConfig) event.Receiver {
 	return &kafka{
-		config: &config,
+		config:      &config,
+		messageChan: make(chan event.Message),
 	}
 }
 
