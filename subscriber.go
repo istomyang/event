@@ -7,7 +7,7 @@ type subscriber struct {
 
 func NewSubscriber(config SubscriberConfig) Subscriber {
 	if config.Receivers == nil {
-		config.Receivers = map[string]Receiver{defaultReceiverKey: createDefaultReceiver()}
+		config.Receivers = []Receiver{createDefaultReceiver()}
 	}
 	return &subscriber{
 		config:    &config,

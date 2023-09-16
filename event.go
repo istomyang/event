@@ -17,7 +17,7 @@ type Subscriber interface {
 
 type SubscriberConfig struct {
 	// Receivers provides different options to receive, if nil, use Default channel-based memory Receiver.
-	Receivers map[string]Receiver // receiverKey:Receiver
+	Receivers []Receiver
 }
 
 type Publish interface {
