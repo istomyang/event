@@ -49,14 +49,14 @@ func (p *publish) PublishSync(messageKey string, message Message) error {
 
 func (p *publish) PublishSender(senderKey string, messageKey string, message Message) {
 	message.Metadata = p.createMessageMetadata(messageKey)
-	message.Metadata.keyOfSenderAndReceiver = senderKey
+	message.Metadata.ChannelKey = senderKey
 	s := p.config.Senders[senderKey]
 	s.Send(message) // s is ok when hasn't.
 }
 
 func (p *publish) PublishSyncSender(senderKey string, messageKey string, message Message) error {
 	message.Metadata = p.createMessageMetadata(messageKey)
-	message.Metadata.keyOfSenderAndReceiver = senderKey
+	message.Metadata.ChannelKey = senderKey
 	s := p.config.Senders[senderKey]
 	return s.SendSync(message) // s is ok when hasn't.
 }

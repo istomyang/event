@@ -65,9 +65,9 @@ type MessageMetadata struct {
 	// Source is first Path of FullPath.
 	Source string `json:"source" yaml:"source" bson:"source"`
 
-	// keyOfSenderAndReceiver is for specific channel should be same across Sender to Receiver.
+	// ChannelKey is for specific channel should be same across Sender to Receiver.
 	// Maybe empty string if call Publish.Publish.
-	keyOfSenderAndReceiver string
+	ChannelKey string `json:"channel_key" yaml:"channel_key" bson:"channel_key"`
 }
 
 type Message struct {
