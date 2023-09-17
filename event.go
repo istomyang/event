@@ -39,7 +39,9 @@ type Subscribe interface {
 	// SubscribeReceiver will panic when duplicate messageKeys.
 	SubscribeReceiver(receiverKey string, messageKey string, handler SubscribeHandler)
 	UnSubscribe(messageKey string)
+	UnSubscribeKeys(messageKeys ...string)
 	UnSubscribeReceiver(receiverKey string, messageKey string)
+	UnSubscribeReceiverKeys(receiverKey string, messageKeys ...string)
 	Helper
 }
 

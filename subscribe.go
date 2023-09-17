@@ -84,6 +84,12 @@ func (s *subscribe) UnSubscribe(messageKey string) {
 	s.mut.Unlock()
 }
 
+func (s *subscribe) UnSubscribeKeys(messageKeys ...string) {
+	for _, key := range messageKeys {
+		s.UnSubscribe(key)
+	}
+}
+
 func (s *subscribe) SubscribeReceiver(receiverKey string, messageKey string, handler SubscribeHandler) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
@@ -100,6 +106,12 @@ func (s *subscribe) UnSubscribeReceiver(receiverKey string, messageKey string) {
 	m := s.receiverKeyMessageKeyHandlerMap[receiverKey]
 	delete(m, messageKey)
 	s.mut.Unlock()
+}
+
+func (s *subscribe) UnSubscribeReceiverKeys(receiverKey string, messageKeys ...string) {
+	for _, key := range messageKeys {
+		s.UnSubscribeReceiver(receiverKey, key)
+	}
 }
 
 func (s *subscribe) validateMessageKey(messageKey string, m map[string]SubscribeHandler) {
