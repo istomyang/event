@@ -13,6 +13,8 @@ type Merge interface {
 	Allowed(key Key) bool
 	// Clear clears local storage of task keys.
 	Clear()
+	// Group provides tree-Merge.
+	Group(path string, newInterval time.Duration) Merge
 	Run() error
 	Close()
 }
@@ -24,18 +26,29 @@ var noop void
 type Key string
 
 type merge struct {
-	storage map[Key]void
-	ticker  *time.Ticker
-	mut     sync.RWMutex
+	storage  map[Key]void
+	ticker   *time.Ticker
+	mut      sync.RWMutex
+	children map[string]Merge
 }
 
 var _ Merge = &merge{}
 
 func NewMerge(interval time.Duration) Merge {
 	return &merge{
-		storage: make(map[Key]void),
-		ticker:  time.NewTicker(interval),
+		storage:  make(map[Key]void),
+		ticker:   time.NewTicker(interval),
+		children: make(map[string]Merge),
 	}
+}
+
+func (m *merge) Group(path string, newInterval time.Duration) Merge {
+	if me, has := m.children[path]; has {
+		return me
+	}
+	child := NewMerge(newInterval)
+	m.children[path] = child
+	return child
 }
 
 func (m *merge) UpdateOnline(duration time.Duration) {
