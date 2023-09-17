@@ -36,6 +36,8 @@ type Subscribe interface {
 	Subscribe(messageKey string, handler SubscribeHandler) // Support wildcard.
 	// SubscribeReceiver will panic when duplicate messageKeys.
 	SubscribeReceiver(receiverKey string, messageKey string, handler SubscribeHandler)
+	UnSubscribe(messageKey string)
+	UnSubscribeReceiver(receiverKey string, messageKey string)
 	Helper
 }
 

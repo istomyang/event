@@ -3,6 +3,7 @@ package event
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 type subscribe struct {
@@ -11,6 +12,7 @@ type subscribe struct {
 	messageKeyHandlerMap            map[string]SubscribeHandler
 	receiverKeyMessageKeyHandlerMap map[string]map[string]SubscribeHandler
 	children                        []*subscribe // tree.
+	mut                             sync.RWMutex
 }
 
 type subscribeConfig struct {
@@ -33,11 +35,13 @@ func (s *subscribe) Handle(context *Context) {
 		receiverKey := context.Metadata.ChannelKey
 		messageKey := context.Metadata.Key
 		var handler SubscribeHandler
+		s.mut.RLocker()
 		if receiverKey == "" {
 			handler = s.messageKeyHandlerMap[messageKey]
 		} else {
 			handler = s.receiverKeyMessageKeyHandlerMap[receiverKey][messageKey]
 		}
+		s.mut.RUnlock()
 		handler(context)
 		return
 	}
@@ -63,10 +67,20 @@ func (s *subscribe) Group(path string) Subscribe {
 
 func (s *subscribe) Subscribe(messageKey string, handler SubscribeHandler) {
 	s.validateMessageKey(messageKey, s.messageKeyHandlerMap)
+	s.mut.Lock()
 	s.messageKeyHandlerMap[messageKey] = handler
+	s.mut.Unlock()
+}
+
+func (s *subscribe) UnSubscribe(messageKey string) {
+	s.mut.Lock()
+	delete(s.messageKeyHandlerMap, messageKey)
+	s.mut.Unlock()
 }
 
 func (s *subscribe) SubscribeReceiver(receiverKey string, messageKey string, handler SubscribeHandler) {
+	s.mut.Lock()
+	defer s.mut.Unlock()
 	if _, has := s.receiverKeyMessageKeyHandlerMap[receiverKey]; !has {
 		s.receiverKeyMessageKeyHandlerMap[receiverKey] = make(map[string]SubscribeHandler)
 	}
@@ -75,7 +89,16 @@ func (s *subscribe) SubscribeReceiver(receiverKey string, messageKey string, han
 	m[messageKey] = handler
 }
 
+func (s *subscribe) UnSubscribeReceiver(receiverKey string, messageKey string) {
+	s.mut.Lock()
+	m := s.receiverKeyMessageKeyHandlerMap[receiverKey]
+	delete(m, messageKey)
+	s.mut.Unlock()
+}
+
 func (s *subscribe) validateMessageKey(messageKey string, m map[string]SubscribeHandler) {
+	s.mut.RLock()
+	defer s.mut.RUnlock()
 	if _, has := m[messageKey]; has {
 		panic(fmt.Sprintf("ValidateMessageKey: duplicatie keys, got: %s", messageKey))
 	}
