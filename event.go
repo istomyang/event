@@ -34,6 +34,8 @@ type Subscribe interface {
 	Group(path string) Subscribe
 	// Subscribe will panic when duplicate messageKeys.
 	Subscribe(messageKey string, handler SubscribeHandler) // Support wildcard.
+	// SubscribeKeys will panic when duplicate messageKeys.
+	SubscribeKeys(handler SubscribeHandler, messageKeys ...string)
 	// SubscribeReceiver will panic when duplicate messageKeys.
 	SubscribeReceiver(receiverKey string, messageKey string, handler SubscribeHandler)
 	UnSubscribe(messageKey string)

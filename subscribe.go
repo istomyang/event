@@ -72,6 +72,12 @@ func (s *subscribe) Subscribe(messageKey string, handler SubscribeHandler) {
 	s.mut.Unlock()
 }
 
+func (s *subscribe) SubscribeKeys(handler SubscribeHandler, messageKeys ...string) {
+	for _, key := range messageKeys {
+		s.Subscribe(key, handler)
+	}
+}
+
 func (s *subscribe) UnSubscribe(messageKey string) {
 	s.mut.Lock()
 	delete(s.messageKeyHandlerMap, messageKey)
