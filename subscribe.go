@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 )
@@ -9,8 +8,8 @@ import (
 type subscribe struct {
 	config                          *subscribeConfig
 	fullPath                        string
-	messageKeyHandlerMap            map[string]SubscribeHandler
-	receiverKeyMessageKeyHandlerMap map[string]map[string]SubscribeHandler
+	messageKeyHandlerMap            map[string][]SubscribeHandler
+	receiverKeyMessageKeyHandlerMap map[string]map[string][]SubscribeHandler
 	children                        []*subscribe // tree.
 	mut                             sync.RWMutex
 }
@@ -23,8 +22,8 @@ var _ Subscribe = &subscribe{}
 func newSubscribe(config subscribeConfig) subscribe {
 	return subscribe{
 		config:                          &config,
-		messageKeyHandlerMap:            make(map[string]SubscribeHandler),
-		receiverKeyMessageKeyHandlerMap: make(map[string]map[string]SubscribeHandler),
+		messageKeyHandlerMap:            make(map[string][]SubscribeHandler),
+		receiverKeyMessageKeyHandlerMap: make(map[string]map[string][]SubscribeHandler),
 		children:                        make([]*subscribe, 0),
 	}
 }
@@ -34,15 +33,17 @@ func (s *subscribe) Handle(context *Context) {
 	if context.Metadata.FullPath == s.FullPathString() {
 		receiverKey := context.Metadata.ChannelKey
 		messageKey := context.Metadata.Key
-		var handler SubscribeHandler
+		var handlers []SubscribeHandler
 		s.mut.RLocker()
 		if receiverKey == "" {
-			handler = s.messageKeyHandlerMap[messageKey]
+			handlers = s.messageKeyHandlerMap[messageKey]
 		} else {
-			handler = s.receiverKeyMessageKeyHandlerMap[receiverKey][messageKey]
+			handlers = s.receiverKeyMessageKeyHandlerMap[receiverKey][messageKey]
 		}
 		s.mut.RUnlock()
-		handler(context)
+		for _, handler := range handlers {
+			handler(context)
+		}
 		return
 	}
 	// handle in next node layer.
@@ -58,17 +59,16 @@ func (s *subscribe) Group(path string) Subscribe {
 	sub := &subscribe{
 		config:                          s.config,
 		fullPath:                        pre + "/" + path,
-		messageKeyHandlerMap:            make(map[string]SubscribeHandler),
-		receiverKeyMessageKeyHandlerMap: make(map[string]map[string]SubscribeHandler),
+		messageKeyHandlerMap:            make(map[string][]SubscribeHandler),
+		receiverKeyMessageKeyHandlerMap: make(map[string]map[string][]SubscribeHandler),
 	}
 	s.children = append(s.children, sub)
 	return sub
 }
 
 func (s *subscribe) Subscribe(messageKey string, handler SubscribeHandler) {
-	s.validateMessageKey(messageKey, s.messageKeyHandlerMap)
 	s.mut.Lock()
-	s.messageKeyHandlerMap[messageKey] = handler
+	s.messageKeyHandlerMap[messageKey] = append(s.messageKeyHandlerMap[messageKey], handler)
 	s.mut.Unlock()
 }
 
@@ -94,11 +94,10 @@ func (s *subscribe) SubscribeReceiver(receiverKey string, messageKey string, han
 	s.mut.Lock()
 	defer s.mut.Unlock()
 	if _, has := s.receiverKeyMessageKeyHandlerMap[receiverKey]; !has {
-		s.receiverKeyMessageKeyHandlerMap[receiverKey] = make(map[string]SubscribeHandler)
+		s.receiverKeyMessageKeyHandlerMap[receiverKey] = make(map[string][]SubscribeHandler)
 	}
 	m := s.receiverKeyMessageKeyHandlerMap[receiverKey]
-	s.validateMessageKey(messageKey, m)
-	m[messageKey] = handler
+	m[messageKey] = append(m[messageKey], handler)
 }
 
 func (s *subscribe) UnSubscribeReceiver(receiverKey string, messageKey string) {
@@ -111,14 +110,6 @@ func (s *subscribe) UnSubscribeReceiver(receiverKey string, messageKey string) {
 func (s *subscribe) UnSubscribeReceiverKeys(receiverKey string, messageKeys ...string) {
 	for _, key := range messageKeys {
 		s.UnSubscribeReceiver(receiverKey, key)
-	}
-}
-
-func (s *subscribe) validateMessageKey(messageKey string, m map[string]SubscribeHandler) {
-	s.mut.RLock()
-	defer s.mut.RUnlock()
-	if _, has := m[messageKey]; has {
-		panic(fmt.Sprintf("ValidateMessageKey: duplicatie keys, got: %s", messageKey))
 	}
 }
 
