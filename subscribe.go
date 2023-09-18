@@ -30,9 +30,9 @@ func newSubscribe(config subscribeConfig) subscribe {
 
 func (s *subscribe) Handle(context *Context) {
 	// handle in this node layer.
-	if context.message.Metadata.FullPath == s.FullPathString() {
-		receiverKey := context.message.Metadata.ChannelKey
-		messageKey := context.message.Metadata.Key
+	if context.Message.Metadata.FullPath == s.FullPathString() {
+		receiverKey := context.Message.Metadata.ChannelKey
+		messageKey := context.Message.Metadata.Key
 		var handlers []SubscribeHandler
 		s.mut.RLocker()
 		if receiverKey == "" {
