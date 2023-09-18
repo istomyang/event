@@ -61,7 +61,7 @@ type Receiver interface {
 }
 
 type Context struct {
-	*Message
+	message *Message
 }
 
 type MessageMetadata struct {

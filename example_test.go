@@ -62,21 +62,21 @@ func runSubscriber() {
 	rootModule := subscriber.Group("rootModule")
 	{
 		rootModule.Subscribe("path1", func(context *Context) {
-			fmt.Printf("Receiver: %s [%s]\n", rootModule.FullPathString(), string(context.Body))
+			fmt.Printf("Receiver: %s [%s]\n", rootModule.FullPathString(), string(context.message.Body))
 		})
 
 		// Sub
 		subModule := rootModule.Group("subModule")
 		{
 			subModule.Subscribe("path2", func(context *Context) {
-				fmt.Printf("Receiver: %s [%s]\n", subModule.FullPathString(), string(context.Body))
+				fmt.Printf("Receiver: %s [%s]\n", subModule.FullPathString(), string(context.message.Body))
 			})
 
 			// SubSub
 			subSubModule := subModule.Group("subSubModule")
 			{
 				subSubModule.Subscribe("path3", func(context *Context) {
-					fmt.Printf("Receiver: %s [%s]\n", subSubModule.FullPathString(), string(context.Body))
+					fmt.Printf("Receiver: %s [%s]\n", subSubModule.FullPathString(), string(context.message.Body))
 				})
 			}
 		}
