@@ -10,8 +10,9 @@ type subscribe struct {
 	fullPath                        string
 	messageKeyHandlerMap            map[string][]SubscribeHandler
 	receiverKeyMessageKeyHandlerMap map[string]map[string][]SubscribeHandler
-	children                        []*subscribe // tree.
+	childrenMap                     map[string]*subscribe // HashMap
 	mut                             sync.RWMutex
+	fastCheck                       bool
 }
 
 type subscribeConfig struct {
@@ -24,17 +25,18 @@ func newSubscribe(config subscribeConfig) subscribe {
 		config:                          &config,
 		messageKeyHandlerMap:            make(map[string][]SubscribeHandler),
 		receiverKeyMessageKeyHandlerMap: make(map[string]map[string][]SubscribeHandler),
-		children:                        make([]*subscribe, 0),
+		childrenMap:                     make(map[string]*subscribe),
+		fastCheck:                       true,
 	}
 }
 
 func (s *subscribe) Handle(context *Context) {
-	// handle in this node layer.
-	if context.Message.Metadata.FullPath == s.FullPathString() {
+	// Handler in this Layer.
+	if !s.fastCheck || context.Message.Metadata.FullPath == s.FullPathString() {
 		receiverKey := context.Message.Metadata.ChannelKey
 		messageKey := context.Message.Metadata.Key
 		var handlers []SubscribeHandler
-		s.mut.RLocker()
+		s.mut.RLock()
 		if receiverKey == "" {
 			handlers = s.messageKeyHandlerMap[messageKey]
 		} else {
@@ -46,23 +48,25 @@ func (s *subscribe) Handle(context *Context) {
 		}
 		return
 	}
-	// handle in next node layer.
-	for _, child := range s.children {
-		child.Handle(context)
-	}
+	// handle in next node layer, here use hashmap.
+	sub := s.childrenMap[context.Message.Metadata.FullPath]
+	sub.Handle(context) // if sub is nil, not panic, because this call do THandle(sub *T, context).
+	// Not found in root layer, return to discard.
 }
 
 func (s *subscribe) Group(path string) Subscribe {
 	var pre = s.fullPath
 	path = strings.TrimSpace(path)
 	path = strings.Trim(path, "/")
+	fullPath := pre + "/" + path
 	sub := &subscribe{
 		config:                          s.config,
-		fullPath:                        pre + "/" + path,
+		fullPath:                        fullPath,
 		messageKeyHandlerMap:            make(map[string][]SubscribeHandler),
 		receiverKeyMessageKeyHandlerMap: make(map[string]map[string][]SubscribeHandler),
+		childrenMap:                     s.childrenMap,
 	}
-	s.children = append(s.children, sub)
+	sub.childrenMap[fullPath] = sub
 	return sub
 }
 
