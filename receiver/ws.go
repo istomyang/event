@@ -2,8 +2,8 @@ package receiver
 
 import (
 	"context"
-	"git.grizzlychina.com/infrastructures/event"
-	"git.grizzlychina.com/infrastructures/event/pkg/ws"
+	"github.com/istomyang/event"
+	"github.com/istomyang/event/pkg/ws"
 	"sync/atomic"
 )
 

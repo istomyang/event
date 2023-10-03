@@ -1,8 +1,8 @@
 package sender
 
 import (
-	"git.grizzlychina.com/infrastructures/event"
 	"github.com/IBM/sarama"
+	"github.com/istomyang/event"
 	"sync"
 	"time"
 )

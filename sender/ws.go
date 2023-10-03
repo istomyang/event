@@ -2,9 +2,9 @@ package sender
 
 import (
 	"context"
-	"git.grizzlychina.com/infrastructures/event"
-	"git.grizzlychina.com/infrastructures/event/pkg/ws"
 	"github.com/gorilla/websocket"
+	"github.com/istomyang/event"
+	"github.com/istomyang/event/pkg/ws"
 	"net/http"
 	"sync"
 )
